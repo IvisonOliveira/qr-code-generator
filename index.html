@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gerador de QR Code</title>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -46,9 +45,14 @@
       margin-bottom: 0.4rem;
     }
 
-    header p {
-      color: var(--muted);
-      font-size: 0.95rem;
+    header p { color: var(--muted); font-size: 0.95rem; }
+
+    .layout {
+      display: flex;
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 900px;
+      align-items: flex-start;
     }
 
     .card {
@@ -56,37 +60,131 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 2rem;
-      width: 100%;
-      max-width: 520px;
+      flex: 1;
+      min-width: 0;
     }
 
+    /* Preview panel */
+    .preview-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.2rem;
+      width: 280px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 1.5rem;
+    }
+
+    .preview-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      align-self: flex-start;
+    }
+
+    .preview-qr {
+      background: #fff;
+      border-radius: 10px;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 220px;
+      height: 220px;
+      position: relative;
+    }
+
+    .preview-qr canvas { display: block; max-width: 200px; max-height: 200px; }
+
+    .preview-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.6rem;
+      color: #ccc;
+    }
+
+    .preview-placeholder svg { opacity: 0.3; }
+    .preview-placeholder span { font-size: 0.78rem; color: #aaa; text-align: center; }
+
+    .preview-spinner {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.85);
+      border-radius: 10px;
+      align-items: center;
+      justify-content: center;
+    }
+    .preview-spinner.active { display: flex; }
+
+    .spinner-ring {
+      width: 32px; height: 32px;
+      border: 3px solid #e0e0e0;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .download-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      width: 100%;
+    }
+
+    .btn-dl, .copy-btn {
+      padding: 0.55rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: border-color 0.2s, background 0.2s;
+      width: 100%;
+      text-align: center;
+    }
+
+    .btn-dl:hover, .copy-btn:hover { border-color: var(--accent); background: #23233a; }
+    .copy-btn.copied { border-color: var(--success); color: var(--success); }
+    .btn-dl:disabled, .copy-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* Tabs */
     .tabs {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.4rem;
       margin-bottom: 1.5rem;
       background: var(--bg);
       padding: 4px;
       border-radius: 10px;
+      flex-wrap: wrap;
     }
 
     .tab {
       flex: 1;
-      padding: 0.5rem;
+      padding: 0.45rem 0.3rem;
       border: none;
       border-radius: 8px;
       background: transparent;
       color: var(--muted);
       cursor: pointer;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 500;
       transition: all 0.2s;
+      white-space: nowrap;
     }
 
-    .tab.active {
-      background: var(--accent);
-      color: #fff;
-    }
-
+    .tab.active { background: var(--accent); color: #fff; }
     .tab:hover:not(.active) { color: var(--text); }
 
     .tab-panel { display: none; }
@@ -121,26 +219,14 @@
       font-family: inherit;
     }
 
-    input:focus, textarea:focus, select:focus {
-      border-color: var(--accent);
-    }
-
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
     textarea { resize: vertical; min-height: 80px; }
 
     .row { display: flex; gap: 1rem; }
     .row > * { flex: 1; }
 
-    .color-row {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1rem;
-    }
-
-    .color-group {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
+    .color-row { display: flex; gap: 1rem; margin-bottom: 1rem; }
+    .color-group { flex: 1; display: flex; flex-direction: column; }
 
     .color-group input[type="color"] {
       width: 100%;
@@ -153,11 +239,7 @@
       margin-bottom: 0;
     }
 
-    .divider {
-      height: 1px;
-      background: var(--border);
-      margin: 1.2rem 0;
-    }
+    .divider { height: 1px; background: var(--border); margin: 1.2rem 0; }
 
     .section-title {
       font-size: 0.8rem;
@@ -168,82 +250,21 @@
       margin-bottom: 1rem;
     }
 
-    button.generate {
-      width: 100%;
-      padding: 0.8rem;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
-      margin-top: 0.5rem;
-    }
-
-    button.generate:hover { background: var(--accent-hover); }
-    button.generate:active { transform: scale(0.98); }
-
-    /* QR Output */
-    .output {
-      margin-top: 2rem;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 1.2rem;
-    }
-
-    .output.visible { display: flex; }
-
-    .qr-wrapper {
-      background: #fff;
-      border-radius: var(--radius);
-      padding: 1.2rem;
-      display: inline-flex;
-      box-shadow: 0 0 0 1px var(--border);
-    }
-
-    .qr-wrapper canvas { display: block; }
-
-    .download-row {
-      display: flex;
-      gap: 0.6rem;
-    }
-
-    .btn-dl {
-      padding: 0.55rem 1.1rem;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--text);
-      cursor: pointer;
-      font-size: 0.88rem;
-      font-weight: 500;
-      transition: border-color 0.2s, background 0.2s;
-    }
-
-    .btn-dl:hover { border-color: var(--accent); background: #23233a; }
-
-    .copy-btn {
-      padding: 0.55rem 1.1rem;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--text);
-      cursor: pointer;
-      font-size: 0.88rem;
-      font-weight: 500;
-      transition: border-color 0.2s, background 0.2s;
-    }
-
-    .copy-btn:hover { border-color: var(--accent); background: #23233a; }
-    .copy-btn.copied { border-color: var(--success); color: var(--success); }
-
     .error-msg {
       color: #f87171;
-      font-size: 0.88rem;
-      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      margin-bottom: 0.5rem;
+      display: none;
+    }
+
+    .lib-error {
+      background: #2a1a1a;
+      border: 1px solid #f87171;
+      border-radius: 8px;
+      padding: 0.8rem 1rem;
+      color: #f87171;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
       display: none;
     }
 
@@ -254,8 +275,17 @@
       text-align: center;
     }
 
-    @media (max-width: 480px) {
-      .card { padding: 1.4rem; }
+    /* Responsive */
+    @media (max-width: 680px) {
+      .layout { flex-direction: column; }
+      .preview-panel { width: 100%; position: static; }
+      .preview-qr { width: 200px; height: 200px; }
+      .download-row { flex-direction: row; flex-wrap: wrap; }
+      .btn-dl, .copy-btn { width: auto; flex: 1; }
+    }
+
+    @media (max-width: 420px) {
+      .card { padding: 1.2rem; }
       .row { flex-direction: column; gap: 0; }
     }
   </style>
@@ -267,150 +297,203 @@
   <p>Crie QR Codes gratuitamente, sem rastreamento</p>
 </header>
 
-<div class="card">
-  <!-- Tabs -->
-  <div class="tabs" role="tablist">
-    <button class="tab active" data-tab="url">URL</button>
-    <button class="tab" data-tab="texto">Texto</button>
-    <button class="tab" data-tab="email">E-mail</button>
-    <button class="tab" data-tab="telefone">Telefone</button>
-    <button class="tab" data-tab="wifi">Wi-Fi</button>
-  </div>
+<div class="layout">
 
-  <!-- URL -->
-  <div class="tab-panel active" id="tab-url">
-    <label for="input-url">Endereço (URL)</label>
-    <input type="url" id="input-url" placeholder="https://exemplo.com.br" />
-  </div>
-
-  <!-- Texto -->
-  <div class="tab-panel" id="tab-texto">
-    <label for="input-texto">Texto livre</label>
-    <textarea id="input-texto" placeholder="Digite qualquer texto aqui..."></textarea>
-  </div>
-
-  <!-- E-mail -->
-  <div class="tab-panel" id="tab-email">
-    <label for="input-email-to">Destinatário</label>
-    <input type="email" id="input-email-to" placeholder="contato@exemplo.com" />
-    <label for="input-email-sub">Assunto</label>
-    <input type="text" id="input-email-sub" placeholder="Assunto do e-mail" />
-    <label for="input-email-body">Mensagem</label>
-    <textarea id="input-email-body" placeholder="Corpo do e-mail..."></textarea>
-  </div>
-
-  <!-- Telefone -->
-  <div class="tab-panel" id="tab-telefone">
-    <label for="input-tel">Número de telefone</label>
-    <input type="tel" id="input-tel" placeholder="+55 11 99999-9999" />
-  </div>
-
-  <!-- Wi-Fi -->
-  <div class="tab-panel" id="tab-wifi">
-    <label for="wifi-ssid">Nome da rede (SSID)</label>
-    <input type="text" id="wifi-ssid" placeholder="MinhaRede" />
-    <label for="wifi-pass">Senha</label>
-    <input type="text" id="wifi-pass" placeholder="senha123" />
-    <label for="wifi-sec">Segurança</label>
-    <select id="wifi-sec">
-      <option value="WPA">WPA / WPA2</option>
-      <option value="WEP">WEP</option>
-      <option value="">Nenhuma (aberta)</option>
-    </select>
-    <label style="display:flex;align-items:center;gap:0.5rem;text-transform:none;letter-spacing:0;font-size:0.9rem;color:var(--text);margin-bottom:0.8rem;">
-      <input type="checkbox" id="wifi-hidden" style="width:auto;margin:0;" />
-      Rede oculta
-    </label>
-  </div>
-
-  <div class="divider"></div>
-
-  <!-- Opções visuais -->
-  <p class="section-title">Aparência</p>
-
-  <div class="color-row">
-    <div class="color-group">
-      <label>Cor do QR</label>
-      <input type="color" id="qr-color" value="#000000" />
+  <!-- Form -->
+  <div class="card">
+    <div id="lib-error" class="lib-error">
+      Falha ao carregar a biblioteca QR. Verifique sua conexão e recarregue a página.
     </div>
-    <div class="color-group">
-      <label>Cor de fundo</label>
-      <input type="color" id="qr-bg" value="#ffffff" />
-    </div>
-  </div>
 
-  <div class="row">
-    <div>
-      <label for="qr-size">Tamanho (px)</label>
-      <select id="qr-size">
-        <option value="128">128</option>
-        <option value="200">200</option>
-        <option value="256" selected>256</option>
-        <option value="512">512</option>
-        <option value="1024">1024</option>
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="url">URL</button>
+      <button class="tab" data-tab="texto">Texto</button>
+      <button class="tab" data-tab="email">E-mail</button>
+      <button class="tab" data-tab="telefone">Telefone</button>
+      <button class="tab" data-tab="wifi">Wi-Fi</button>
+    </div>
+
+    <div class="tab-panel active" id="tab-url">
+      <label for="input-url">Endereço (URL)</label>
+      <input type="url" id="input-url" placeholder="https://exemplo.com.br" />
+    </div>
+
+    <div class="tab-panel" id="tab-texto">
+      <label for="input-texto">Texto livre</label>
+      <textarea id="input-texto" placeholder="Digite qualquer texto aqui..."></textarea>
+    </div>
+
+    <div class="tab-panel" id="tab-email">
+      <label for="input-email-to">Destinatário</label>
+      <input type="email" id="input-email-to" placeholder="contato@exemplo.com" />
+      <label for="input-email-sub">Assunto</label>
+      <input type="text" id="input-email-sub" placeholder="Assunto do e-mail" />
+      <label for="input-email-body">Mensagem</label>
+      <textarea id="input-email-body" placeholder="Corpo do e-mail..."></textarea>
+    </div>
+
+    <div class="tab-panel" id="tab-telefone">
+      <label for="input-tel">Número de telefone</label>
+      <input type="tel" id="input-tel" placeholder="+55 11 99999-9999" />
+    </div>
+
+    <div class="tab-panel" id="tab-wifi">
+      <label for="wifi-ssid">Nome da rede (SSID)</label>
+      <input type="text" id="wifi-ssid" placeholder="MinhaRede" />
+      <label for="wifi-pass">Senha</label>
+      <input type="text" id="wifi-pass" placeholder="senha123" />
+      <label for="wifi-sec">Segurança</label>
+      <select id="wifi-sec">
+        <option value="WPA">WPA / WPA2</option>
+        <option value="WEP">WEP</option>
+        <option value="">Nenhuma (aberta)</option>
       </select>
+      <label style="display:flex;align-items:center;gap:0.5rem;text-transform:none;letter-spacing:0;font-size:0.9rem;color:var(--text);margin-bottom:0.8rem;">
+        <input type="checkbox" id="wifi-hidden" style="width:auto;margin:0;" />
+        Rede oculta
+      </label>
     </div>
-    <div>
-      <label for="qr-level">Correção de erro</label>
-      <select id="qr-level">
-        <option value="L">L — Baixa</option>
-        <option value="M" selected>M — Média</option>
-        <option value="Q">Q — Alta</option>
-        <option value="H">H — Máxima</option>
-      </select>
+
+    <div class="divider"></div>
+    <p class="section-title">Aparência</p>
+
+    <div class="color-row">
+      <div class="color-group">
+        <label>Cor do QR</label>
+        <input type="color" id="qr-color" value="#000000" />
+      </div>
+      <div class="color-group">
+        <label>Cor de fundo</label>
+        <input type="color" id="qr-bg" value="#ffffff" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label for="qr-size">Tamanho (px)</label>
+        <select id="qr-size">
+          <option value="128">128</option>
+          <option value="200">200</option>
+          <option value="256" selected>256</option>
+          <option value="512">512</option>
+          <option value="1024">1024</option>
+        </select>
+      </div>
+      <div>
+        <label for="qr-level">Correção de erro</label>
+        <select id="qr-level">
+          <option value="L">L — Baixa</option>
+          <option value="M" selected>M — Média</option>
+          <option value="Q">Q — Alta</option>
+          <option value="H">H — Máxima</option>
+        </select>
+      </div>
+    </div>
+
+    <p id="error-msg" class="error-msg"></p>
+  </div>
+
+  <!-- Preview panel -->
+  <div class="preview-panel">
+    <span class="preview-title">Pré-visualização</span>
+
+    <div class="preview-qr" id="preview-qr">
+      <div class="preview-placeholder" id="preview-placeholder">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+          <rect x="4" y="4" width="24" height="24" rx="2" stroke="#888" stroke-width="3"/>
+          <rect x="10" y="10" width="12" height="12" rx="1" fill="#888"/>
+          <rect x="36" y="4" width="24" height="24" rx="2" stroke="#888" stroke-width="3"/>
+          <rect x="42" y="10" width="12" height="12" rx="1" fill="#888"/>
+          <rect x="4" y="36" width="24" height="24" rx="2" stroke="#888" stroke-width="3"/>
+          <rect x="10" y="42" width="12" height="12" rx="1" fill="#888"/>
+          <rect x="36" y="36" width="8" height="8" fill="#888"/>
+          <rect x="48" y="36" width="8" height="8" fill="#888"/>
+          <rect x="36" y="48" width="8" height="8" fill="#888"/>
+          <rect x="48" y="52" width="12" height="8" fill="#888"/>
+        </svg>
+        <span>Digite algo para ver a pré-visualização</span>
+      </div>
+      <canvas id="qr-canvas" style="display:none;max-width:200px;max-height:200px;"></canvas>
+      <div class="preview-spinner" id="spinner">
+        <div class="spinner-ring"></div>
+      </div>
+    </div>
+
+    <div class="download-row">
+      <button class="btn-dl" id="dl-png" disabled>Baixar PNG</button>
+      <button class="btn-dl" id="dl-svg" disabled>Baixar SVG</button>
+      <button class="copy-btn" id="btn-copy" disabled>Copiar imagem</button>
     </div>
   </div>
 
-  <p id="error-msg" class="error-msg">Preencha o campo corretamente antes de gerar.</p>
-  <button class="generate" id="btn-generate">Gerar QR Code</button>
-</div>
-
-<!-- Output -->
-<div class="output" id="output">
-  <div class="qr-wrapper">
-    <canvas id="qr-canvas"></canvas>
-  </div>
-  <div class="download-row">
-    <button class="btn-dl" id="dl-png">Baixar PNG</button>
-    <button class="btn-dl" id="dl-svg">Baixar SVG</button>
-    <button class="copy-btn" id="btn-copy">Copiar imagem</button>
-  </div>
 </div>
 
 <footer>Gerado localmente no seu navegador — nenhum dado é enviado a servidores.</footer>
 
 <script>
-  // Tab switching
-  const tabs = document.querySelectorAll('.tab');
-  const panels = document.querySelectorAll('.tab-panel');
-  let activeTab = 'url';
+  // ── Library loading with fallback ──────────────────────────────────────────
+  const CDNS = [
+    'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js',
+    'https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js',
+  ];
 
-  tabs.forEach(tab => {
+  let libReady = false;
+
+  function loadScript(url) {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = url;
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error('Failed: ' + url));
+      document.head.appendChild(s);
+    });
+  }
+
+  async function loadLib() {
+    for (const url of CDNS) {
+      try {
+        await loadScript(url);
+        if (typeof QRCode !== 'undefined') { libReady = true; return; }
+      } catch (_) {}
+    }
+    document.getElementById('lib-error').style.display = 'block';
+  }
+
+  loadLib().then(() => { if (libReady) schedulePreview(); });
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  let activeTab = 'url';
+  let lastSvg   = '';
+  let debounceTimer = null;
+  let hasQR = false;
+
+  // ── Tab switching ──────────────────────────────────────────────────────────
+  document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
-      tabs.forEach(t => t.classList.remove('active'));
-      panels.forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       tab.classList.add('active');
       activeTab = tab.dataset.tab;
       document.getElementById('tab-' + activeTab).classList.add('active');
-      document.getElementById('output').classList.remove('visible');
+      schedulePreview();
     });
   });
 
-  // Build QR content from active tab
+  // ── Build content string ───────────────────────────────────────────────────
   function buildContent() {
     switch (activeTab) {
       case 'url': {
         const v = document.getElementById('input-url').value.trim();
-        return v ? v : null;
+        return v || null;
       }
       case 'texto': {
         const v = document.getElementById('input-texto').value.trim();
-        return v ? v : null;
+        return v || null;
       }
       case 'email': {
         const to = document.getElementById('input-email-to').value.trim();
         if (!to) return null;
-        const sub = encodeURIComponent(document.getElementById('input-email-sub').value.trim());
+        const sub  = encodeURIComponent(document.getElementById('input-email-sub').value.trim());
         const body = encodeURIComponent(document.getElementById('input-email-body').value.trim());
         return `mailto:${to}?subject=${sub}&body=${body}`;
       }
@@ -421,42 +504,50 @@
       case 'wifi': {
         const ssid = document.getElementById('wifi-ssid').value.trim();
         if (!ssid) return null;
-        const pass = document.getElementById('wifi-pass').value;
-        const sec  = document.getElementById('wifi-sec').value;
+        const pass   = document.getElementById('wifi-pass').value;
+        const sec    = document.getElementById('wifi-sec').value;
         const hidden = document.getElementById('wifi-hidden').checked ? 'true' : 'false';
-        const esc = s => s.replace(/([\\;,":'])/g, '\\$1');
+        const esc    = s => s.replace(/([\\;,":'])/g, '\\$1');
         return `WIFI:T:${sec};S:${esc(ssid)};P:${esc(pass)};H:${hidden};;`;
       }
     }
   }
 
-  let lastSvg = '';
+  // ── Render QR ──────────────────────────────────────────────────────────────
+  async function renderQR() {
+    if (!libReady) return;
 
-  async function generate() {
     const content = buildContent();
-    const errEl = document.getElementById('error-msg');
+    const errEl   = document.getElementById('error-msg');
+    const canvas  = document.getElementById('qr-canvas');
+    const placeholder = document.getElementById('preview-placeholder');
+    const spinner = document.getElementById('spinner');
 
     if (!content) {
-      errEl.style.display = 'block';
+      canvas.style.display = 'none';
+      placeholder.style.display = 'flex';
+      setDownloadsEnabled(false);
+      hasQR = false;
+      errEl.style.display = 'none';
       return;
     }
+
+    spinner.classList.add('active');
     errEl.style.display = 'none';
 
-    const canvas = document.getElementById('qr-canvas');
-    const size   = parseInt(document.getElementById('qr-size').value);
-    const level  = document.getElementById('qr-level').value;
-    const color  = document.getElementById('qr-color').value;
-    const bgColor= document.getElementById('qr-bg').value;
+    const size    = parseInt(document.getElementById('qr-size').value);
+    const level   = document.getElementById('qr-level').value;
+    const color   = document.getElementById('qr-color').value;
+    const bgColor = document.getElementById('qr-bg').value;
 
     try {
       await QRCode.toCanvas(canvas, content, {
-        width: size,
+        width: Math.min(size, 200),
         errorCorrectionLevel: level,
         color: { dark: color, light: bgColor },
         margin: 2,
       });
 
-      // Generate SVG for download
       lastSvg = await QRCode.toString(content, {
         type: 'svg',
         errorCorrectionLevel: level,
@@ -465,30 +556,61 @@
         width: size,
       });
 
-      document.getElementById('output').classList.add('visible');
-      document.getElementById('output').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      placeholder.style.display = 'none';
+      canvas.style.display = 'block';
+      setDownloadsEnabled(true);
+      hasQR = true;
     } catch (e) {
       errEl.textContent = 'Erro ao gerar QR Code: ' + e.message;
       errEl.style.display = 'block';
+      hasQR = false;
+    } finally {
+      spinner.classList.remove('active');
     }
   }
 
-  document.getElementById('btn-generate').addEventListener('click', generate);
+  function schedulePreview() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(renderQR, 280);
+  }
 
-  // Allow Enter in text inputs to trigger generate
-  document.querySelectorAll('input[type="url"], input[type="text"], input[type="email"], input[type="tel"]')
-    .forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') generate(); }));
+  function setDownloadsEnabled(on) {
+    ['dl-png', 'dl-svg', 'btn-copy'].forEach(id => {
+      document.getElementById(id).disabled = !on;
+    });
+  }
 
-  // Download PNG
-  document.getElementById('dl-png').addEventListener('click', () => {
-    const canvas = document.getElementById('qr-canvas');
+  // ── Live preview listeners ─────────────────────────────────────────────────
+  document.querySelectorAll('input, textarea, select').forEach(el => {
+    el.addEventListener('input', schedulePreview);
+    el.addEventListener('change', schedulePreview);
+  });
+
+  // ── Download PNG (full resolution) ─────────────────────────────────────────
+  document.getElementById('dl-png').addEventListener('click', async () => {
+    if (!hasQR || !libReady) return;
+    const content  = buildContent();
+    if (!content) return;
+    const size     = parseInt(document.getElementById('qr-size').value);
+    const level    = document.getElementById('qr-level').value;
+    const color    = document.getElementById('qr-color').value;
+    const bgColor  = document.getElementById('qr-bg').value;
+
+    const hiCanvas = document.createElement('canvas');
+    await QRCode.toCanvas(hiCanvas, content, {
+      width: size,
+      errorCorrectionLevel: level,
+      color: { dark: color, light: bgColor },
+      margin: 2,
+    });
+
     const a = document.createElement('a');
     a.download = 'qrcode.png';
-    a.href = canvas.toDataURL('image/png');
+    a.href = hiCanvas.toDataURL('image/png');
     a.click();
   });
 
-  // Download SVG
+  // ── Download SVG ───────────────────────────────────────────────────────────
   document.getElementById('dl-svg').addEventListener('click', () => {
     if (!lastSvg) return;
     const blob = new Blob([lastSvg], { type: 'image/svg+xml' });
@@ -499,10 +621,11 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   });
 
-  // Copy image to clipboard
+  // ── Copy to clipboard ──────────────────────────────────────────────────────
   document.getElementById('btn-copy').addEventListener('click', async () => {
+    if (!hasQR) return;
     const canvas = document.getElementById('qr-canvas');
-    const btn = document.getElementById('btn-copy');
+    const btn    = document.getElementById('btn-copy');
     try {
       canvas.toBlob(async blob => {
         await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
