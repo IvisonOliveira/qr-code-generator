@@ -1029,16 +1029,35 @@ function normStr(s, max) {
           .replace(/[^A-Za-z0-9 ]/g, '').trim().substring(0, max).toUpperCase();
 }
 
-function buildPixPayload({ chave, nome, cidade, valor, txid, descricao }) {
+function normalizePixKey(chave, tipo) {
+  switch (tipo) {
+    case 'cpf':
+    case 'cnpj':
+      return chave.replace(/\D/g, '');
+    case 'telefone': {
+      const digits = chave.replace(/\D/g, '');
+      return '+' + digits;
+    }
+    case 'email':
+      return chave.trim().toLowerCase();
+    default:
+      return chave.trim().toLowerCase();
+  }
+}
+
+function buildPixPayload({ chave, tipo, nome, cidade, valor, txid, descricao }) {
+  const chaveNorm = normalizePixKey(chave, tipo);
+
   const gui = pixField('00', 'BR.GOV.BCB.PIX');
-  let mai   = gui + pixField('01', chave);
+  let mai   = gui + pixField('01', chaveNorm);
   if (descricao) mai += pixField('02', descricao.substring(0, 40));
 
-  const ref = txid ? normStr(txid, 25).replace(/\s/g, '') : '***';
-  const adf = pixField('05', ref || '***');
+  const ref = txid ? normStr(txid, 25).replace(/\s/g, '') || '***' : '***';
+  const adf = pixField('05', ref);
 
   let payload =
     pixField('00', '01') +
+    pixField('01', '12') +
     pixField('26', mai) +
     pixField('52', '0000') +
     pixField('53', '986') +
@@ -1115,13 +1134,15 @@ function buildContent() {
       const chave  = document.getElementById('pix-chave').value.trim();
       const nome   = document.getElementById('pix-nome').value.trim();
       const cidade = document.getElementById('pix-cidade').value.trim();
+      const tipo   = document.getElementById('pix-tipo').value;
       if (!chave || !nome || !cidade) return null;
       return buildPixPayload({
         chave,
+        tipo,
         nome,
         cidade,
-        valor:    document.getElementById('pix-valor').value.trim(),
-        txid:     document.getElementById('pix-txid').value.trim(),
+        valor:     document.getElementById('pix-valor').value.trim(),
+        txid:      document.getElementById('pix-txid').value.trim(),
         descricao: document.getElementById('pix-desc').value.trim(),
       });
     }
