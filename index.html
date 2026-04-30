@@ -998,7 +998,7 @@ const pixPlaceholders = {
   cpf:      '000.000.000-00',
   cnpj:     '00.000.000/0001-00',
   email:    'seupix@email.com',
-  telefone: '+5511999999999',
+  telefone: '(11) 99999-9999',
   aleatoria:'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
 };
 
@@ -1036,7 +1036,8 @@ function normalizePixKey(chave, tipo) {
       return chave.replace(/\D/g, '');
     case 'telefone': {
       const digits = chave.replace(/\D/g, '');
-      return '+' + digits;
+      if (digits.startsWith('55') && digits.length >= 12) return '+' + digits;
+      return '+55' + digits;
     }
     case 'email':
       return chave.trim().toLowerCase();
